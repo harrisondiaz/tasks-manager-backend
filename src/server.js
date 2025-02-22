@@ -10,15 +10,13 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors({
-    origin: 'http://localhost:4200',
+    origin: ['http://localhost:4200', 'https://challenge-1-front.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
 
-
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
-
 
 initializeDatabase();
 
@@ -30,5 +28,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Export app for testing
 module.exports = { app };
