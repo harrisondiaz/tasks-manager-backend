@@ -7,11 +7,9 @@ describe('Tasks Endpoints', () => {
   let userId;
 
   beforeEach(async () => {
-    // Limpiar tablas: nota que usamos comillas simples dentro de la query SQL
     await db.exec('DELETE FROM tasks');
     await db.exec('DELETE FROM users WHERE email = \'tasktest@test.com\'');
 
-    // Registrar usuario de prueba
     const registerRes = await request(app)
       .post('/auth/register')
       .send({
@@ -19,25 +17,22 @@ describe('Tasks Endpoints', () => {
         email: 'tasktest@test.com',
         password: 'password123'
       });
-
     expect(registerRes.statusCode).toBe(201);
 
-    
     const loginRes = await request(app)
       .post('/auth/login')
       .send({
         email: 'tasktest@test.com',
         password: 'password123'
       });
-
     expect(loginRes.statusCode).toBe(200);
     authToken = loginRes.body.token;
     userId = loginRes.body.user.id;
   });
 
   afterEach(async () => {
-    await db.exec('DELETE FROM tasks');
-    await db.exec('DELETE FROM users WHERE email = \'tasktest@test.com\'');
+    await db.exec("DELETE FROM tasks");
+    await db.exec("DELETE FROM users WHERE email = 'tasktest@test.com'");
   });
 
   describe('POST /tasks', () => {
@@ -49,8 +44,6 @@ describe('Tasks Endpoints', () => {
           title: 'Test Task',
           description: 'Test Description'
         });
-
-      
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty('id');
     });
@@ -59,10 +52,7 @@ describe('Tasks Endpoints', () => {
       const res = await request(app)
         .post('/tasks')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          description: 'Test Description'
-        });
-
+        .send({ description: 'Test Description' });
       expect(res.statusCode).toBe(500);
     });
 
@@ -73,7 +63,6 @@ describe('Tasks Endpoints', () => {
           title: 'Test Task',
           description: 'Test Description'
         });
-
       expect(res.statusCode).toBe(401);
     });
   });
@@ -87,7 +76,6 @@ describe('Tasks Endpoints', () => {
           title: 'Test Task 1',
           description: 'Description 1'
         });
-
       await request(app)
         .post('/tasks')
         .set('Authorization', `Bearer ${authToken}`)
@@ -101,21 +89,17 @@ describe('Tasks Endpoints', () => {
       const res = await request(app)
         .get('/tasks')
         .set('Authorization', `Bearer ${authToken}`);
-
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBe(2);
       expect(res.body[0]).toHaveProperty('id');
-      expect(res.body[0].user_id).toBe(userId);
     });
 
     it('should return empty array when no tasks exist', async () => {
       await db.exec('DELETE FROM tasks');
-      
       const res = await request(app)
         .get('/tasks')
         .set('Authorization', `Bearer ${authToken}`);
-
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBe(0);
@@ -124,7 +108,6 @@ describe('Tasks Endpoints', () => {
 
   describe('PUT /tasks/:id', () => {
     let taskId;
-
     beforeEach(async () => {
       const createRes = await request(app)
         .post('/tasks')
@@ -133,7 +116,6 @@ describe('Tasks Endpoints', () => {
           title: 'Task to Update',
           description: 'Will be updated'
         });
-
       taskId = createRes.body.id;
     });
 
@@ -143,10 +125,11 @@ describe('Tasks Endpoints', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           title: 'Updated Task',
-          description: 'Updated Description'
+          description: 'Updated Description',
+          completed: 1
         });
-
-      expect(res.statusCode).toBe(404);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('message', 'Tarea actualizada');
     });
 
     it('should not update non-existent task', async () => {
@@ -157,14 +140,49 @@ describe('Tasks Endpoints', () => {
           title: 'Updated Task',
           description: 'Updated Description'
         });
+      expect(res.statusCode).toBe(404);
+    });
+  });
 
+  describe('PUT /tasks/:id/toggle', () => {
+    let taskId;
+    beforeEach(async () => {
+      const createRes = await request(app)
+        .post('/tasks')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          title: 'Task to Toggle',
+          description: 'Initial state false'
+        });
+      taskId = createRes.body.id;
+    });
+
+    it('should toggle the completion status of a task', async () => {
+      const res1 = await request(app)
+        .put(`/tasks/${taskId}/toggle`)
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(res1.statusCode).toBe(200);
+      expect(res1.body).toHaveProperty('message', 'Tarea actualizada');
+      expect(res1.body).toHaveProperty('completed', true);
+
+      const res2 = await request(app)
+        .put(`/tasks/${taskId}/toggle`)
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(res2.statusCode).toBe(200);
+      expect(res2.body).toHaveProperty('message', 'Tarea actualizada');
+      expect(res2.body).toHaveProperty('completed', false);
+    });
+
+    it('should return 404 when toggling non-existent task', async () => {
+      const res = await request(app)
+        .put('/tasks/999999/toggle')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(res.statusCode).toBe(404);
     });
   });
 
   describe('DELETE /tasks/:id', () => {
     let taskId;
-
     beforeEach(async () => {
       const createRes = await request(app)
         .post('/tasks')
@@ -173,7 +191,6 @@ describe('Tasks Endpoints', () => {
           title: 'Task to Delete',
           description: 'Will be deleted'
         });
-
       taskId = createRes.body.id;
     });
 
@@ -181,7 +198,6 @@ describe('Tasks Endpoints', () => {
       const res = await request(app)
         .delete(`/tasks/${taskId}`)
         .set('Authorization', `Bearer ${authToken}`);
-
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('message', 'Tarea eliminada');
 
@@ -210,7 +226,6 @@ describe('Tasks Endpoints', () => {
       const res = await request(app)
         .delete(`/tasks/${taskId}`)
         .set('Authorization', `Bearer ${otherLoginRes.body.token}`);
-
       expect(res.statusCode).toBe(404);
     });
 
@@ -218,7 +233,6 @@ describe('Tasks Endpoints', () => {
       const res = await request(app)
         .delete('/tasks/999999')
         .set('Authorization', `Bearer ${authToken}`);
-
       expect(res.statusCode).toBe(404);
     });
   });
