@@ -80,7 +80,17 @@ Todos los endpoints de tareas requieren autenticación mediante token JWT en el 
     "description": "Descripción de la tarea"
   }
   ```
+- `PUT /tasks/:id` - Actualizar una tarea existente
+  ```json
+  {
+    "title": "Título actualizado",
+    "description": "Descripción actualizada",
+    "completed": false
+  }
+  ```
 - `DELETE /tasks/:id` - Eliminar una tarea
+- `PATCH /tasks/:id/toggle` - Cambiar el estado de completado de una tarea
+  // El endpoint alterna el estado de 'completed' de la tarea
 
 ## Estructura del Proyecto
 
@@ -91,6 +101,7 @@ tasks-manager-backend/
 │   ├── controllers/    # Controladores
 │   ├── middleware/     # Middlewares
 │   ├── routes/         # Rutas de la API
+│   ├── utils/          # Funciones de utilidad
 │   └── server.js       # Punto de entrada
 ├── tests/             # Tests
 ├── database/          # Base de datos SQLite
@@ -104,6 +115,20 @@ tasks-manager-backend/
 - JWT - Autenticación
 - Jest - Testing
 - Supertest - Testing de API
+
+## Deployment
+
+Para desplegar la aplicación en producción, siga estos pasos:
+
+1. Configure las variables de entorno necesarias (ej. NODE_ENV, PORT, etc.).
+2. Instale las dependencias:
+```bash
+npm install --production
+```
+3. Inicie la aplicación:
+```bash
+npm start
+```
 
 ## Base de Datos
 
@@ -119,4 +144,13 @@ El proyecto utiliza SQLite con las siguientes tablas:
 - id (INTEGER PRIMARY KEY)
 - title (TEXT)
 - description (TEXT)
+- completed (BOOLEAN)
 - user_id (INTEGER FOREIGN KEY)
+
+## Contributing
+
+Si desea contribuir, por favor siga estos pasos:
+
+1. Fork el repositorio.
+2. Cree una rama para su feature o fix: `git checkout -b feature/nueva-funcionalidad`
+3. Realice los cambios y envíe un Pull Request.

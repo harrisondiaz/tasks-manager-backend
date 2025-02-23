@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { db } = require('../config/database');
+const generateCustomHash = require('../utils/hashGenerator');
 
 const register = (req, res) => {
   const { name, email, password } = req.body;
@@ -11,11 +11,12 @@ const register = (req, res) => {
       return res.status(400).json({ error: 'El usuario ya existe' });
     }
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    const { hash } = generateCustomHash(password, 2262633264682);
+
     const result = db.prepare(`
       INSERT INTO users (name, email, password) 
       VALUES (?, ?, ?)
-    `).run(name, email, hashedPassword);
+    `).run(name, email, hash);
 
     res.status(201).json({ message: 'Usuario registrado exitosamente' });
   } catch (error) {
@@ -28,7 +29,12 @@ const login = (req, res) => {
   
   try {
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user || !bcrypt.compareSync(password, user.password)) {
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    const { hash } = generateCustomHash(password, 2262633264682);
+    if (hash !== user.password) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
